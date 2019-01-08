@@ -93,8 +93,7 @@ class FictitiousPlay(object):
 
         for i, player in enumerate(self.players):
             for j in self.opponent_list[i]:
-                if j>i:
-                    k = j - 1
+                k = j-1 if j>i else j
                 player.current_assessment[k][:] = \
                     pure2mixed(self.assessment_sizes[i][k], init_actions[j])
 
@@ -117,8 +116,7 @@ class FictitiousPlay(object):
         """
         for i, player in enumerate(self.players):
             for j in self.opponent_list[i]:
-                if j > i:
-                    k = j - 1
+                k = j-1 if j>i else j
                 player.current_assessment[k][:] *= 1 - step_size
                 player.current_assessment[k][self.current_actions[j]] += step_size
 
