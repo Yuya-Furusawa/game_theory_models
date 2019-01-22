@@ -72,7 +72,7 @@ Set each player's actions specified by `init_actions`. If `init_actions` is
 """
 
 function _set_actions(g::AbstractFictitiousPlay{N},
-					init_actions::Union{ActionProfile,Nothing}) where N
+					init_actions::Union{AbstractVector{<:PureAction},Nothing}) where N
 	#Set Actions
 	if init_actions == nothing
 		init_actions = zeros(Int, N)
@@ -97,7 +97,7 @@ Set each player's assessments specified by `init_actions`.
 """
 
 function _set_assessments(g::AbstractFictitiousPlay{N},
-						init_actions::ActionProfile) where N
+						init_actions::AbstractVector{<:PureAction}) where N
 	#Set Beliefs
 	player_list = [1:N...]
 	assessments =
@@ -132,7 +132,7 @@ Return the each player's assessments after `ts_length` times iteration.
 """
 
 function get_iterate_result(g::FictitiousPlay{N}, ts_length::Int,
-						init_actions::Union{ActionProfile,Nothing}=nothing) where N
+						init_actions::Union{AbstractVector{<:PureAction},Nothing}=nothing) where N
 	#Set Actions
 	init_actions = _set_actions(g,init_actions)
 	#Set Beliefs
@@ -155,7 +155,7 @@ function get_iterate_result(g::FictitiousPlay{N}, ts_length::Int,
 		end
 	end
 	#Return
-	return [assessments[i][1] for i in 1:N] #Array of Array
+	return [assessments[i][1] for i in 1:N]
 end
 
 """
@@ -176,7 +176,7 @@ Return the each player's assessments after `ts_length` times iteration.
 """
 
 function get_iterate_result(g::StochasticFictitiousPlay{N}, ts_length::Int,
-							init_actions::Union{ActionProfile,Nothing}=nothing,
+							init_actions::Union{AbstractVector{<:PureAction},Nothing}=nothing,
 							epsilon::Union{<:Real,Nothing}=nothing) where N
 	#Set Actions
 	init_actions = _set_actions(g,init_actions)
@@ -222,7 +222,7 @@ function get_iterate_result(g::StochasticFictitiousPlay{N}, ts_length::Int,
 		end
 	end
 	#Return
-	return [assessments[i][1] for i in 1:N] #Array of Array
+	return [assessments[i][1] for i in 1:N]
 end
 
 # get_time_series
@@ -244,7 +244,7 @@ Return the array of the sequences of each player's assessments.
 """
 
 function get_time_series(g::FictitiousPlay{N}, ts_length::Int,
-					init_actions::Union{ActionProfile,Nothing}=nothing) where N
+					init_actions::Union{AbstractVector{<:PureAction},Nothing}=nothing) where N
 	#Set Actions
 	init_actions = _set_actions(g,init_actions)
 	#Set Beliefs
@@ -271,7 +271,7 @@ function get_time_series(g::FictitiousPlay{N}, ts_length::Int,
 		end
 	end
 	#Return
-	return [assessment_sequences[:,i] for i in 1:N] #ts_length x N Array
+	return [assessment_sequences[:,i] for i in 1:N]
 end
 
 """
@@ -293,8 +293,8 @@ Return the array of the sequences of each player's assessments.
 
 
 function get_time_series(g::StochasticFictitiousPlay{N}, ts_length::Int,
-						init_actions::Union{ActionProfile,Nothing}=nothing,
-						epsilon::Union{<:Real,Nothing}=nothing) where N
+						init_actions::Union{AbstractVector{<:PureAction},Nothing}=nothing,
+						epsilon::Union{Real,Nothing}=nothing) where N
 	#Set Actions
 	init_actions = _set_actions(g,init_actions)
 	#Set Beliefs
@@ -343,5 +343,5 @@ function get_time_series(g::StochasticFictitiousPlay{N}, ts_length::Int,
 		end
 	end
 	#Return
-	return [assessment_sequences[:,i] for i in 1:N] #ts_length x N Array
+	return [assessment_sequences[:,i] for i in 1:N]
 end
