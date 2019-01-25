@@ -112,6 +112,43 @@ function _set_assessments(g::AbstractFictitiousPlay{N},
 	return assessments
 end
 
+# _sum_index
+
+"""
+	_sum_index(g,i,j)
+	
+Function used in `get_time_series`.
+
+# Arguments
+
+- `g::AbstractFictitiousPlay{N}` : `FictitiousPlay` or `StochasticFictitiousPlay` instance.
+- `i::Int` : index representing a player
+- `j::Int` : index representing an opponent
+"""
+
+function _sum_index(g::AbstractFictitiousPlay{N},i::Int,j::Int) where N
+	total = 0
+	player_list = [1:N...]
+	assessment_sizes = [[num_actions(g.game.players[j]) for j in player_list[1:N .!= i]] for i in 1:N]
+	if i == 1
+		if j == 1
+        	total = 0
+        else
+        	for k in 1:j-1
+        		total = total + assessment_sizes[1][k]
+        	end
+        end
+    else
+    	for k in 1:i-1
+   			total = total + sum(assessment_sizes[k])
+    	end
+    	for l in 1:j-1
+    		total = total + assessment_sizes[i][l]
+    	end
+    end
+    return total
+end
+
 
 # get_iterate_result
 
@@ -155,7 +192,7 @@ function get_iterate_result(g::FictitiousPlay{N}, ts_length::Int,
 		end
 	end
 	#Return
-	return [assessments[i][1] for i in 1:N]
+	return [[assessments[i][j] for j in 1:N-1] for i in 1:N]
 end
 
 """
@@ -222,7 +259,7 @@ function get_iterate_result(g::StochasticFictitiousPlay{N}, ts_length::Int,
 		end
 	end
 	#Return
-	return [assessments[i][1] for i in 1:N]
+	return [[assessments[i][j] for j in 1:N-1] for i in 1:N]
 end
 
 # get_time_series
@@ -244,34 +281,30 @@ Return the array of the sequences of each player's assessments.
 """
 
 function get_time_series(g::FictitiousPlay{N}, ts_length::Int,
-					init_actions::Union{AbstractVector{<:PureAction},Nothing}=nothing) where N
-	#Set Actions
+						init_actions::Union{AbstractVector{<:PureAction},Nothing}=nothing) where N
 	init_actions = _set_actions(g,init_actions)
-	#Set Beliefs
 	assessments = _set_assessments(g,init_actions)
-	#Create assessment sequence
-	assessment_sequences = Array{Any}(undef, ts_length, N)
-	#Iteration
+	total_number_of_actions = sum(num_actions(g.game.players[i]) for i in 1:N) * (N-1)
+	assessment_sequences = Array{Any}(undef, ts_length, total_number_of_actions)
+	player_list = [1:N...]
 	for t in 1:ts_length
-		#Substitution
-		assessment_sequences[t,:] = [assessments[i][1] for i in 1:N]
-		#play
-		for (i, player) in enumerate(g.game.players)
+		for i in 1:N
+			for j in 1:N-1
+				assessment_sequences[t,_sum_index(g,i,j)+1:_sum_index(g,i,j+1)] = assessments[i][j]
+			end
+		end
+		for (i,player) in enumerate(g.game.players)
 			init_actions[i] = best_response(player, tuple(assessments[i]...))
 		end
-		#update_assessments
-		player_list = [1:N...]
 		for (i, player) in enumerate(g.game.players)
 			for j in player_list[1:N .!= i]
 				k = j > i ? j-1 : j
 				assessments[i][k] = assessments[i][k] * (1 - 1/(t+1))
-				assessments[i][k][init_actions[j]] =
-								assessments[i][k][init_actions[j]] + 1/(t+1)
+				assessments[i][k][init_actions[j]] = assessments[i][k][init_actions[j]] + 1/(t+1)
 			end
 		end
 	end
-	#Return
-	return [assessment_sequences[:,i] for i in 1:N]
+	return [assessment_sequences[:,_sum_index(g,i,j)+1:_sum_index(g,i,j+1)] for i in 1:N for j in 1:N-1]
 end
 
 """
@@ -318,11 +351,17 @@ function get_time_series(g::StochasticFictitiousPlay{N}, ts_length::Int,
 		step_size = t -> epsilon
 	end
 	#Create assessment sequence
-	assessment_sequences = Array{Any}(undef, ts_length, N)
+	total_number_of_actions = sum(num_actions(g.game.players[i]) for i in 1:N) * (N-1)
+	assessment_sequences = Array{Any}(undef, ts_length, total_number_of_actions)
+	player_list = [1:N...]
 	#Iteration
 	for t in 1:ts_length
 		#Substitution
-		assessment_sequences[t,:] = [assessments[i][1] for i in 1:N]
+		for i in 1:N
+			for j in 1:N-1
+				assessment_sequences[t,_sum_index(g,i,j)+1:_sum_index(g,i,j+1)] = assessments[i][j]
+			end
+		end
 		#play
 		payoff_pertubation = Vector{Any}(undef, N)
 		for (i, player) in enumerate(g.game.players)
@@ -332,16 +371,14 @@ function get_time_series(g::StochasticFictitiousPlay{N}, ts_length::Int,
 				best_response(player, tuple(assessments[i]...), payoff_pertubation[i])
 		end
 		#update_assessments
-		player_list = [1:N...]
 		for (i, player) in enumerate(g.game.players)
 			for j in player_list[1:N .!= i]
 				k = j > i ? j-1 : j
 				assessments[i][k] = assessments[i][k] * (1 - 1/step_size(t+1))
-				assessments[i][k][init_actions[j]] =
-						assessments[i][k][init_actions[j]] + 1/step_size(t+1)
+				assessments[i][k][init_actions[j]] = assessments[i][k][init_actions[j]] + 1/step_size(t+1)
 			end
 		end
 	end
 	#Return
-	return [assessment_sequences[:,i] for i in 1:N]
+	return [assessment_sequences[:,_sum_index(g,i,j)+1:_sum_index(g,i,j+1)] for i in 1:N for j in 1:N-1]
 end
