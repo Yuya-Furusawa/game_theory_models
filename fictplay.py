@@ -55,14 +55,10 @@ class FictitiousPlay(object):
         self.opponent_list = list(list(range(self.N)) for i in range(self.N))
         for i in range(self.N):
             self.opponent_list[i].remove(i)
-
-        self.assessment_sizes = tuple(
-                tuple(self.nums_actions[j] for j in self.opponent_list[i]) for i in range(self.N)
-                )
         
-        # Create instance variable `current_assessment` for self.players
+        # Create instance variable `norm_action_hist` for players
         for i, player in enumerate(self.players):
-            player.current_assessment = np.asarray([np.empty(self.nums_actions[j]) for j in self.opponent_list[i]])
+            player.norm_action_hist = np.empty(self.nums_actions[i])
 
         self._initial_weight = lambda t: 1 / (t+1)
         self.step_size = self._initial_weight
@@ -77,13 +73,13 @@ class FictitiousPlay(object):
         return self.__repr__()
 
     @property
-    def current_assessments(self):
-        return tuple(player.current_assessment for player in self.players)
+    def norm_action_hist(self):
+        return tuple(player.norm_action_hist for player in self.players)
 
     def set_init_actions(self, init_actions=None):
         """
         Randomly sets `current_actions` if `init_actions` is None.
-        And initialize `current_assessment` for each player given `current_actions`
+        And initialize `norm_action_hist` for each player given `current_actions`
         """
         if init_actions is None:
             init_actions = np.zeros(self.N, dtype=int)
@@ -92,53 +88,39 @@ class FictitiousPlay(object):
         self.current_actions[:] = init_actions
 
         for i, player in enumerate(self.players):
-            for j in self.opponent_list[i]:
-                k = j-1 if j>i else j
-                player.current_assessment[k][:] = \
-                    pure2mixed(self.assessment_sizes[i][k], init_actions[j])
+            player.norm_action_hist[:] = pure2mixed(self.nums_actions[i], init_actions[i])
 
     def play(self):
         """
         The method used to proceed the game by one period. Players take their
-        best response strategies given assessments about opponents actions.
+        best response strategies given noramlized action history about opponents actions.
 
         """
         for i, player in enumerate(self.players):
+            opponent_actions = np.asarray([opponent.norm_action_hist for opponent in self.players if opponent != player])
             self.current_actions[i] = \
-                player.best_response(player.current_assessment if self.N > 2 else player.current_assessment[0],
+                player.best_response(opponent_actions if self.N > 2 else opponent_actions[0],
                                     tie_breaking=self.tie_breaking)
 
-    def update_asseccements(self, step_size):
+    def update_norm_action_hist(self, step_size):
         """
-        This method used to update each players' assessments. Assessments are updated by
+        This method used to update each players' normalized action history. Normalized action histories are updated by
         opponent's action and `step_size`.
 
         """
         for i, player in enumerate(self.players):
-            for j in self.opponent_list[i]:
-                k = j-1 if j>i else j
-                player.current_assessment[k][:] *= 1 - step_size
-                player.current_assessment[k][self.current_actions[j]] += step_size
+            player.norm_action_hist[:] *= 1 - step_size
+            player.norm_action_hist[self.current_actions[i]] += step_size
 
-    def _sum_index(self, i, j):
-        #i and j are index
-        total = 0
-        if i==0:
-            if j==0:
-                total = 0
-            else:
-                for k in range(j):
-                    total += self.assessment_sizes[0][k]
+    def _sum_index(self, i):
+        if i == 0:
+            return 0
         else:
-            for k in range(i):
-                total += sum(self.assessment_sizes[k])
-            for l in range(j):
-                total += self.assessment_sizes[i][l]
-        return total
+            return sum(self.nums_actions[j] for j in range(i))
 
     def get_time_series(self, ts_length, init_actions=None):
         """
-        Return the assessments of each players in each round.
+        Return the noramlized action history of each players in each round.
 
         Parameters
         ----------
@@ -146,22 +128,18 @@ class FictitiousPlay(object):
             The number of rounds you play in a simulation.
 
         """
-        assessments_sequence = np.empty((ts_length, sum(self.nums_actions)*(self.N-1)))
-        assessments_iter = self.get_time_series_iter(ts_length, init_actions)
+        norm_action_hist_sequence = np.empty((ts_length, sum(self.nums_actions)))
+        norm_action_hist_iter = self.get_time_series_iter(ts_length, init_actions)
 
-        for t, assessments in enumerate(assessments_iter):
+        for t, norm_action_hist in enumerate(norm_action_hist_iter):
             for i in range(self.N):
-                for j in range(self.N-1):
-                    assessments_sequence[t, self._sum_index(i,j):self._sum_index(i,j+1)] = assessments[i][j]
+                norm_action_hist_sequence[t, self._sum_index(i):self._sum_index(i+1)] = norm_action_hist[i]
 
-        assessment_list = []
+        norm_action_hist_list = []
         for i in range(self.N):
-            temp = []
-            for j in range(self.N-1):
-                temp.append(np.asarray(assessments_sequence[:, self._sum_index(i,j):self._sum_index(i,j+1)]))
-            assessment_list.append(temp)
+            norm_action_hist_list.append(norm_action_hist_sequence[:, self._sum_index(i):self._sum_index(i+1)])
 
-        return tuple(assessment_list)
+        return tuple(norm_action_hist_list)
 
     def get_time_series_iter(self, ts_length, init_actions=None):
         """
@@ -176,13 +154,13 @@ class FictitiousPlay(object):
         self.set_init_actions(init_actions)
 
         for t in range(ts_length):
-            yield self.current_assessments
+            yield self.norm_action_hist
             self.play()
-            self.update_asseccements(self.step_size(t+1))
+            self.update_norm_action_hist(self.step_size(t+1))
 
     def iterate_result(self, ts_length, init_actions=None):
         """
-        Returns the ultimate assessments of each players after `ts_length` times play.
+        Returns the ultimate normalized action history of each players after `ts_length` times play.
 
         Parameters
         ----------
@@ -195,7 +173,7 @@ class FictitiousPlay(object):
         for t in range(ts_length):
             self.play()
             self.update_asseccements(self.step_size(t+1))
-        return self.current_assessments
+        return self.norm_action_hist
 
 
 class StochasticFictitiousPlay(FictitiousPlay):
@@ -259,12 +237,13 @@ class StochasticFictitiousPlay(FictitiousPlay):
         n = sum(self.nums_actions)
         random_values = self.payoff_perturbation_dist(size=n)
         payoff_perturbations = []
-        for j in range(self.N):
-            payoff_perturbations.append(random_values[self._sum_index(j,0):self._sum_index(j+1,0)])
+        for i in range(self.N):
+            payoff_perturbations.append(random_values[self._sum_index(i):self._sum_index(i+1)])
 
         for i, player in enumerate(self.players):
+            opponent_actions = np.asarray([opponent.norm_action_hist for opponent in self.players if opponent != player])
             self.current_actions[i] = player.best_response(
-                player.current_assessment if self.N > 2 else player.current_assessment[0],
+                opponent_actions if self.N > 2 else opponent_actions[0],
                 tie_breaking=self.tie_breaking,
                 payoff_perturbation=payoff_perturbations[i]
             )
