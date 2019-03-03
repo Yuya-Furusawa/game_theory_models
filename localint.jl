@@ -19,7 +19,7 @@ function LocalInteraction(payoff_matrix, adj_matrix, init_actions::Games.PureAct
 	return LocalInteraction(N, m, adj_matrix, players, current_actions)
 end
 
-function LocalInteraction(players::NTuple{N,Player{N}}, adj_matrix, init_actions::Games.PureActionProfile) where N
+function LocalInteraction(players::NTuple{N,Player{2}}, adj_matrix, init_actions::Games.PureActionProfile) where N
 	if size(adj_matrix)[1] != N
 		throw(ArgumentError("The number of players must be equivalent to the number of the rows of adjacency matrix"))
 	end
