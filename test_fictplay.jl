@@ -7,8 +7,8 @@
 #       to believe there might be a type stability with that function.
 
 using Games
-using Distribution
-using Tests
+using Distributions
+using Test
 
 include("fictplay.jl")
 
@@ -34,9 +34,9 @@ include("fictplay.jl")
         @test @inferred(play(fp_con, init_actions)) == ([1.0,0.0], [0.9,0.1])
 
         @test @inferred(time_series(fp_dec, 3, init_actions)) ==
-              ([1.0 1.0 1.0; 0.0 0.0 0.0], [1.0, 0.5, 1/3; 0.0, 0.5, 2/3])
+              ([1.0 1.0 1.0; 0.0 0.0 0.0], [1.0 0.5 1/3; 0.0 0.5 2/3])
         @test @inferred(time_series(fp_con, 3 ,init_actions)) ==
-              ([1.0 1.0 1.0; 0.0 0.0 0.0], [1.0, 0.9, 0.81; 0.0, 0.1, 0.19])
+              ([1.0 1.0 1.0; 0.0 0.0 0.0], [1.0 0.9 0.81; 0.0 0.1 0.19])
     end
 
     @testset "Testing stochastic fictitious play" begin

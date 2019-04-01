@@ -5,6 +5,7 @@ Tools for fictitious play
 
 using Games
 using Distributions
+using Random
 
 
 # AbstractGain #
@@ -188,7 +189,7 @@ Update `actions` which represents the normalized action history for each player.
 """
 function play!(rng::AbstractRNG,
                fp::FictitiousPlay{N},
-               actions::MixedActionProfile{TA,N},
+               actions::Games.MixedActionProfile{TA,N},
                options::BROptions,
                brs::Vector{Int}, t::Integer) where {N,TA<:Real}
     for i in 1:N
@@ -225,7 +226,7 @@ Update `actions` which represents the normalized action history for each player.
 """
 function play!(rng::AbstractRNG,
                fp::StochasticFictitiousPlay{N},
-               actions::MixedActionProfile{TA,N},
+               actions::Games.MixedActionProfile{TA,N},
                options::BROptions,
                brs::Vector{Int}, t::Integer) where {N,TA<:Real}
     for i in 1:N
@@ -243,7 +244,7 @@ function play!(rng::AbstractRNG,
     return actions
 end
 
-play!(fp::StochasticFictitiousPlay{N}, actions::MixedActionProfile{TA,N},
+play!(fp::StochasticFictitiousPlay{N}, actions::Games.MixedActionProfile{TA,N},
       options::BROptions, brs::Vector{Int}, t::Integer) where {N,TA<:Real} =
     play!(Random.GLOBAL_RNG, fp, actions, options, brs, t)
 
@@ -267,7 +268,7 @@ Update normalized action history `num_reps` times.
 """
 function play!(rng::AbstractRNG,
                fp::AbstractFictitiousPlay{N},
-               actions::MixedActionProfile{TA,N},
+               actions::Games.MixedActionProfile{TA,N},
                options::BROptions=BROptions();
                num_reps::Integer=1, t_init::Integer=1) where {N,TA<:Real}
     brs = Vector{Int}(undef, N)
@@ -300,7 +301,7 @@ Return normalized action history after `num_reps` times iterations.
 """
 function play(rng::AbstractRNG,
               fp::AbstractFictitiousPlay{N},
-              actions::MixedActionProfile{TA,N},
+              actions::Games.MixedActionProfile{TA,N},
               options::BROptions=BROptions();
               num_reps::Integer=1, t_init::Integer=1) where {N,TA<:Real}
     Tout = typeof(zero(TA)/one(TA))
@@ -309,7 +310,7 @@ function play(rng::AbstractRNG,
     play!(rng, fp, actions_copied, options, num_reps=num_reps, t_init=t_init)
 end
 
-play(fp::AbstractFictitiousPlay, actions::MixedActionProfile,
+play(fp::AbstractFictitiousPlay, actions::Games.MixedActionProfile,
      options::BROptions=BROptions(); num_reps::Integer=1, t_init::Integer=1) =
     play(Random.GLOBAL_RNG, fp, actions, options,
          num_reps=num_reps, t_init=t_init)
@@ -334,14 +335,14 @@ Return normalized action history after `num_reps` times iterations.
 """
 function play(rng::AbstractRNG,
               fp::AbstractFictitiousPlay{N},
-              actions::PureActionProfile{N},
+              actions::Games.PureActionProfile{N},
               options::BROptions=BROptions();
               num_reps::Integer=1, t_init::Integer=1) where {N}
     mixed_actions = ntuple(i -> pure2mixed(fp.nums_actions[i], actions[i]), N)
     play!(rng, fp, mixed_actions, options, num_reps=num_reps, t_init=t_init)
 end
 
-play(fp::AbstractFictitiousPlay, actions::PureActionProfile,
+play(fp::AbstractFictitiousPlay, actions::Games.PureActionProfile,
      options::BROptions=BROptions(); num_reps::Integer=1, t_init::Integer=1) =
     play(Random.GLOBAL_RNG, fp, actions, options,
          num_reps=num_reps, t_init=t_init)
@@ -429,8 +430,8 @@ function _copy_action_to!(dest::AbstractVector, src::PureAction)
 end
 
 for (ex_TAS, ex_where, ex_T) in (
-        (:(MixedActionProfile{TA,N}), (:(N), :(T<:Real), :(TA<:Real)), :(TA)),
-        (:(PureActionProfile{N}), (:(N), :(T<:Real)), :(T))
+        (:(Games.MixedActionProfile{TA,N}), (:(N), :(T<:Real), :(TA<:Real)), :(TA)),
+        (:(Games.PureActionProfile{N}), (:(N), :(T<:Real)), :(T))
     )
     @eval function time_series(rng::AbstractRNG,
                                fp::AbstractFictitiousPlay{N,T},
