@@ -7,10 +7,8 @@ from __future__ import division
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_almost_equal
-from nose.tools import eq_, ok_, raises
 
 from fictplay import FictitiousPlay, StochasticFictitiousPlay
-from normal_form_game import NormalFormGame
 
 
 class Test_FictitiousPlay_DecreaingGain:

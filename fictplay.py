@@ -1,7 +1,7 @@
 import numpy as np
 from util import check_random_state
 from normal_form_game import *
-from random import random_pure_actions
+from random_game import random_pure_actions
 
 
 class FictitiousPlay():
