@@ -1,111 +1,108 @@
 """
 Filename: test_fictplay.py
-Author: Daisuke Oyama
-
 Tests for fictplay.py
-
 """
+
 from __future__ import division
 
 import numpy as np
-from numpy.testing import assert_array_equal, assert_array_almost_equal_nulp
+from numpy.testing import assert_array_equal, assert_almost_equal
 from nose.tools import eq_, ok_, raises
 
-from fictplay import FictitiousPlay
+from fictplay import FictitiousPlay, StochasticFictitiousPlay
 from normal_form_game import NormalFormGame
 
 
-class TestFictitiousPlay_square_matrix:
-    '''Test the methods of FictitiousPlay with square matrix'''
+class Test_FictitiousPlay_DecreaingGain:
 
     def setUp(self):
         '''Setup a FictitiousPlay instance'''
         # symmetric 2x2 coordination game
-        payoff_matrix = [[4, 0],
-                         [3, 2]]
-        self.fp = FictitiousPlay(payoff_matrix)
-
-    def test_set_init_actions_with_given_init_actions(self):
-        init_actions = (0, 1)
-
-        self.fp.set_init_actions(init_actions)
-        assert_array_equal(self.fp.current_actions, init_actions)
-
-        for i, current_belief in enumerate(self.fp.current_beliefs):
-            ok_(current_belief[init_actions[1-i]] == 1 and
-                current_belief.sum() == 1)
-
-    def test_set_init_actions_when_init_action_dist_None(self):
-        self.fp.set_init_actions()  # Action dist randomly chosen
-        init_actions = self.fp.current_actions
-
-        for i, current_belief in enumerate(self.fp.current_beliefs):
-            ok_(current_belief[init_actions[1-i]] == 1 and
-                current_belief.sum() == 1)
+        matching_pennies = [[( 1, -1), (-1,  1)],
+                            [(-1,  1), ( 1, -1)]]
+        self.fp = FictitiousPlay(matching_pennies)
 
     def test_play(self):
-        init_actions = (0, 1)
-        best_responses = (1, 0)
-        self.fp.set_init_actions(init_actions)
-        self.fp.play()
-        assert_array_equal(self.fp.current_actions, best_responses)
+        init_actions = (0, 0)
+        best_responses = [np.asarray([1,0]), np.asarray([1,0])]
+        assert_array_equal(self.fp.play(init_actions=init_actions), best_responses)
 
-    def test_simulate_rest_point(self):
-        beliefs_sequence = \
-            self.fp.simulate(ts_length=3, init_actions=(0, 0))
-        assert_array_equal(
-            beliefs_sequence[0],
+    def test_time_series(self):
+        x = self.fp.time_series(ts_length=3, init_actions=(0, 0))
+        assert_array_equal(x[0],
             [[1, 0],
              [1, 0],
              [1, 0]]
             )
-
-    def test_simulate(self):
-        beliefs_sequence = \
-            self.fp.simulate(ts_length=3, init_actions=(0, 1))
-        # played actions: (0, 1), (1, 0), (0, 1)
-        assert_array_almost_equal_nulp(
-            beliefs_sequence[0],
-            [[0, 1],
-             [1/2, 1/2],
-             [1/3, 2/3]]
-            )
+        assert_array_equal(x[1],
+            [[1,0],
+             [1/2,1/2],
+             [1/3,2/3]])
 
 
-class TestFictitiousPlay_bimatrix:
-    '''Test the methods of FictitiousPlay with bimatrix'''
+class Test_FictitiousPlay_ConstantGain:
 
     def setUp(self):
-        '''Setup a FictitiousPlay instance'''
-        payoff_bimatrix = np.zeros((2, 3, 2))  # 2 x 3 game
-        g = NormalFormGame(payoff_bimatrix)
-        self.fp = FictitiousPlay(g)
+        matching_pennies = [[( 1, -1), (-1,  1)],
+                            [(-1,  1), ( 1, -1)]]
+        self.fp = FictitiousPlay(matching_pennies,gain=0.1)
 
-    def test_set_init_actions_with_given_init_actions(self):
-        init_actions = (0, 2)
+    def test_play(self):
+        init_actions = (0, 0)
+        best_responses = [np.asarray([1,0]), np.asarray([0.9,0.1])]
+        assert_array_equal(self.fp.play(init_actions=init_actions), best_responses)
 
-        self.fp.set_init_actions(init_actions)
-        assert_array_equal(self.fp.current_actions, init_actions)
+    def test_time_series(self):
+        x = self.fp.time_series(ts_length=3, init_actions=(0, 0))
+        assert_array_equal(x[0],
+            [[1, 0],
+             [1, 0],
+             [1, 0]]
+            )
+        assert_array_equal(x[1],
+            [[1,0],
+             [0.9,0.1],
+             [0.81,0.19]])
 
-        for i, current_belief in enumerate(self.fp.current_beliefs):
-            ok_(current_belief[init_actions[1-i]] == 1 and
-                current_belief.sum() == 1)
+class Test_StochasticFictitiosuPlay_DecreaingGain:
 
-    def test_set_init_actions_when_init_action_dist_None(self):
-        self.fp.set_init_actions()  # Action dist randomly chosen
-        init_actions = self.fp.current_actions
+    def setUp(self):
+        matching_pennies = [[( 1, -1), (-1,  1)],
+                            [(-1,  1), ( 1, -1)]]
+        self.fp = FictitiousPlay(matching_pennies,distribution='extreme')
 
-        for i, current_belief in enumerate(self.fp.current_beliefs):
-            ok_(current_belief[init_actions[1-i]] == 1 and
-                current_belief.sum() == 1)
+    def test_play(self):
+        init_actions = (0, 0)
+        x = self.fp.play(init_actions=init_actions)
+        assert_almost_equal(sum(x[0]), 1)
+        assert_almost_equal(sum(x[1]), 1)
 
+    def test_time_series(self):
+        x = self.fp.time_series(ts_length=3, init_actions=(0, 0))
+        for t in range(3):
+            assert_almost_equal(sum(x[0][:,t]), 1)
+            assert_almost_equal(sum(x[0][:,t]), 1)
+
+class Test_StochasticFictitiosuPlay_ConstantGain:
+
+    def setUp(self):
+        matching_pennies = [[( 1, -1), (-1,  1)],
+                            [(-1,  1), ( 1, -1)]]
+        self.fp = FictitiousPlay(matching_pennies,gain=0.1,distribution='extreme')
+
+    def test_play(self):
+        init_actions = (0, 0)
+        x = self.fp.play(init_actions=init_actions)
+        assert_almost_equal(sum(x[0]), 1)
+        assert_almost_equal(sum(x[1]), 1)
+
+    def test_time_series(self):
+        x = self.fp.time_series(ts_length=3, init_actions=(0, 0))
+        for t in range(3):
+            assert_almost_equal(sum(x[0][:,t]), 1)
+            assert_almost_equal(sum(x[0][:,t]), 1)
 
 # Invalid inputs #
-
-@raises(ValueError)
-def test_fp_invalid_input():
-    fp = FictitiousPlay(np.zeros((2, 3, 4, 3)))  # three-player game
-
 
 if __name__ == '__main__':
     import sys
