@@ -1,22 +1,14 @@
-"""
-Filename: localint.py
-
-Authors: Daisuke Oyama, Atsushi Yamagishi
-
-Local interaction model.
-
-"""
-from __future__ import division
-
-import numbers
 import numpy as np
+import numbers
 from scipy import sparse
-from normal_form_game import Player
+from util import check_random_state
+from normal_form_game import *
+from random import random_pure_actions
 
 
-class LocalInteraction(object):
+class LocalInteraction():
     """
-    Class representing the Local Interaction Model.
+    Class representing the local interaction model.
 
     Parameters
     ----------
@@ -33,22 +25,15 @@ class LocalInteraction(object):
     ----------
     players : list(Player)
         The list consisting of all players with the given payoff matrix.
-        Players are represented by instances of the `Player` class from
-        `game_tools`.
 
     adj_matrix : scipy.sparse.csr.csr_matrix(float, ndim=2)
         See Parameters.
 
-    N : int
+    N : scalar(int)
         The Number of players.
 
-    num_actions : int
+    num_actions : scalar(int)
         The number of actions available to each player.
-
-    current_actions : ndarray(int, ndim=1)
-        Array of length N containing the current action configuration of
-        the players.
-
     """
     def __init__(self, payoff_matrix, adj_matrix):
         self.adj_matrix = sparse.csr_matrix(adj_matrix)
@@ -65,140 +50,105 @@ class LocalInteraction(object):
         self.players = [Player(A) for i in range(self.N)]
         self.tie_breaking = 'smallest'
 
-        init_actions = np.zeros(self.N, dtype=int)
-        self.current_actions_mixed = sparse.csr_matrix(
-            (np.ones(self.N, dtype=int), init_actions, np.arange(self.N+1)),
-            shape=(self.N, self.num_actions)
-        )
-        self._current_actions = self.current_actions_mixed.indices.view()
+    def _play(self, actions, player_ind=None):
+        actions_matrix = sparse.csr_matrix(
+            (np.ones(self.N, dtype=int), actions, np.arange(self.N+1)),
+            shape=(self.N, self.num_actions))
 
-    @property
-    def current_actions(self):
-        return self._current_actions
+        opponent_act_dict = self.adj_matrix[player_ind].dot(
+            actions_matrix).toarray()
 
-    def set_init_actions(self, init_actions=None):
-        """
-        This method randomly sets `current_actions` if `init_actions` is None.
-        """
-        if init_actions is None:
-            init_actions = np.random.randint(self.num_actions, size=self.N)
-
-        self._current_actions[:] = init_actions
-
-    def play(self, player_ind=None):
-        """
-        The method used to proceed the game by one period. Players take their
-        best response strategies given the adjacency matrix.
-
-        Parameters
-        ----------
-        player_ind : scalar(int) or array_like(int),
-                     optional(default=None)
-            Index (int) of a player or a list of indices of players to
-            be given an revision opportunity.
-
-        """
         if player_ind is None:
             player_ind = list(range(self.N))
 
+        for k, i in enumerate(player_ind):
+            actions[k] = self.players[i].best_response(
+                opponent_act_dict[k, :],
+                tie_breaking=self.tie_breaking)
+
+        return actions
+
+    def play(self, init_actions=None, player_ind=None, num_reps=1,
+             random_state=None):
+        """
+        Return a new action profile which is updated by playing the game
+        `num_reps` times.
+
+        Parameters
+        ----------
+        init_actions : tuple(int), optional(default=None)
+            The action profile in the first period. If None, selected randomly.
+
+        player_ind : array_like(int), optional(default=None)
+            The index of players who take actions. If None, all players take
+            actions.
+
+        num_reps : scalar(int), optional(default=1)
+            The number of iterations.
+
+        Returns
+        -------
+        tuple(int)
+            The action profile after iteration.
+        """
+        if init_actions is None:
+            nums_actions = tuple([self.num_actions] * self.N)
+            init_actions = random_pure_actions(nums_actions, random_state)
+
+        if player_ind is None:
+            player_ind = list(range(self.N))
         elif isinstance(player_ind, numbers.Integral):
             player_ind = [player_ind]
 
-        opponent_act_dists = \
-            self.adj_matrix[player_ind].dot(
-                self.current_actions_mixed).toarray()
+        actions = [action for action in init_actions]
+        for t in range(num_reps):
+            actions = self._play(actions, player_ind)
 
-        best_responses = np.empty(len(player_ind), dtype=int)
-        for k, i in enumerate(player_ind):
-            best_responses[k] = \
-                self.players[i].best_response(opponent_act_dists[k, :],
-                                              tie_breaking=self.tie_breaking)
+        return actions
 
-        self._current_actions[player_ind] = best_responses
-
-    def simulate(self, ts_length, init_actions=None, revision='simultaneous'):
+    def time_series(self, ts_length, revision='simultaneous',
+                    init_actions=None, player_ind_seq=None, random_state=None):
         """
-        Return `ts_length` arrays of players' actions in each period. Each
-        columnsvcorresponds to respective players. The updates of best response
-        strategies are done simultaneously or sequentially.
+        Return the array representing time series of each player's actions.
 
         Parameters
         ----------
         ts_length : scalar(int)
-            The number of period you want to play the game in a simulation.
+            The number of iterations.
 
-        revision : {'simultaneous', 'sequential'},
-            optional(default='simultaneous')
-            Rervision type used in updating best response strategies.
+        revision : {'simultaneous', 'sequencial'}(default='simultaneous')
+            The revision method.
 
+        init_actions : tuple(int), optional(default=None)
+            The action profile in the first period. If None, selected randomly.
+
+        player_ind_seq : array_like, optional(default=None)
+            The sequence of `player_ind`(see `play` Parameters). If None, all
+            elements are array designating all players.
+
+        Returns
+        -------
+        Array
+            The array representing time series of each player's actions.
         """
-        actions_sequence = np.empty((ts_length, self.N), dtype=int)
-        actions_sequence_iter = \
-            self.simulate_iter(ts_length, init_actions=init_actions,
-                               revision=revision)
-
-        for t, actions in enumerate(actions_sequence_iter):
-            actions_sequence[t] = actions
-
-        return actions_sequence
-
-    def simulate_iter(self, ts_length, init_actions=None,
-                      revision='simultaneous'):
-        """
-        Iterator version of `simulate` method.
-
-        Parameters
-        ----------
-        ts_length : scalar(int)
-            The number of period you want to play the game in a simulation.
-
-        revision : {'simultaneous', 'sequential'},
-            optional(default='simultaneous')
-            Rervision type used in updating best response strategies.
-
-
-        """
-        self.set_init_actions(init_actions=init_actions)
+        if init_actions is None:
+            nums_actions = tuple([self.num_actions] * self.N)
+            init_actions = random_pure_actions(nums_actions, random_state)
 
         if revision == 'simultaneous':
-            player_ind_sequence = [None] * ts_length
-        elif revision == 'sequential':
-            player_ind_sequence = np.random.randint(self.N, size=ts_length)
+            player_ind_seq = [None] * ts_length
+        elif revision == 'sequencial':
+            if player_ind_seq is None:
+                random_state = check_random_state(random_state)
+                player_ind_seq = random_state.randint(self.N, ts_length)
         else:
-            raise ValueError("revision must be 'simultaneous' or 'sequential'")
+            raise ValueError("revision must be `simultaneous` or `sequencial`")
 
+        actions = [action for action in init_actions]
+        out = np.empty((ts_length, self.N), dtype=int)
         for t in range(ts_length):
-            yield self.current_actions
-            self.play(player_ind=player_ind_sequence[t])
-
-    def replicate(self, ts_length, num_reps, init_actions=None,
-                  revision='simultaneous'):
-        """
-        This method returns `num_reps` arrays of the simulation results, which
-        are the actions in last periods. In each simulation, the game is played
-        'ts_length' period.
-
-        Parameters
-        ----------
-        ts_length : scalar(int)
-            The number of period in each simulation.
-
-        num_reps : scalar(int)
-            The number of replicated results.
-
-        revision : {'simultaneous', 'sequential'},
-            optional(default='simultaneous')
-            Rervision type used in updating best response strategies.
-
-        """
-        out = np.empty((num_reps, self.N), dtype=int)
-
-        for j in range(num_reps):
-            actions_sequence_iter = \
-                self.simulate_iter(ts_length+1, init_actions=init_actions,
-                                   revision=revision)
-            for actions in actions_sequence_iter:
-                x = actions
-            out[j] = x
+            for i in range(self.N):
+                out[t, i] = actions[i]
+            actions = self._play(actions, player_ind_seq[t])
 
         return out

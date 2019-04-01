@@ -130,7 +130,7 @@ import numbers
 import numpy as np
 from numba import jit
 
-from ..util import check_random_state
+from util import check_random_state
 
 
 class Player:
