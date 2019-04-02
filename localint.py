@@ -3,7 +3,7 @@ import numbers
 from scipy import sparse
 from util import check_random_state
 from normal_form_game import *
-from random import random_pure_actions
+from random_game import random_pure_actions
 
 
 class LocalInteraction():
@@ -51,6 +51,9 @@ class LocalInteraction():
         self.tie_breaking = 'smallest'
 
     def _play(self, actions, player_ind=None):
+        if player_ind is None:
+            player_ind = list(range(self.N))
+        
         actions_matrix = sparse.csr_matrix(
             (np.ones(self.N, dtype=int), actions, np.arange(self.N+1)),
             shape=(self.N, self.num_actions))

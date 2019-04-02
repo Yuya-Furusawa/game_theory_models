@@ -8,7 +8,7 @@ Tests for localint.py
 from __future__ import division
 
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_array_equal, assert_equal
 from nose.tools import eq_, ok_, raises
 
 from localint import LocalInteraction
@@ -19,60 +19,24 @@ class TestLocalInteraction:
 
     def setUp(self):
         '''Setup a LocalInteraction instance'''
-        # Circle network with 5 players
-        adj_matrix = [[0, 1, 0, 0, 1],
-                      [1, 0, 1, 0, 0],
-                      [0, 1, 0, 1, 0],
-                      [0, 0, 1, 0, 1],
-                      [1, 0, 0, 1, 0]]
-        # 2x2 coordination game with action 1 risk-dominant
-        payoff_matrix = [[4, 0],
-                         [2, 3]]
+        payoff_matrix = np.asarray([[4,0],[2,3]])
+        adj_matrix = np.asarray([[0, 1, 3],
+                                 [2, 0, 1],
+                                 [3, 2, 0]])
         self.li = LocalInteraction(payoff_matrix, adj_matrix)
 
-    def test_set_init_actions_with_given_init_actions(self):
-        self.li.set_init_actions([0, 1, 1, 0, 0])
-        assert_array_equal(self.li.current_actions, [0, 1, 1, 0, 0])
+    def test_play(self):
+        init_actions = (0,0,1)
+        x = (1,0,0)
+        assert_equal(self.li.play(init_actions=init_actions), x)
 
-    def test_set_init_actions_when_init_actions_None(self):
-        self.li.set_init_actions()  # Actions randomly assigned
-        ok_(all(
-            action in list(range(2)) for action in self.li.current_actions)
-            )
-
-    def test_play_when_player_ind_None(self):
-        self.li.set_init_actions([1, 0, 0, 0, 0])
-        self.li.play()  # All players revise
-        assert_array_equal(self.li.current_actions, [0, 1, 0, 0, 1])
-
-    def test_play_when_player_ind_int(self):
-        self.li.set_init_actions([1, 0, 0, 0, 0])
-        self.li.play(player_ind=1)  # Player 1 revises
-        assert_array_equal(self.li.current_actions, [1, 1, 0, 0, 0])
-
-    def test_play_when_player_ind_list(self):
-        self.li.set_init_actions([1, 0, 0, 0, 0])
-        self.li.play(player_ind=[0, 1, 2])  # Players 0, 1, and 2 revises
-        assert_array_equal(self.li.current_actions, [0, 1, 0, 0, 0])
-
-    def test_simulate_with_simultaneous_revision(self):
-        assert_array_equal(
-            self.li.simulate(ts_length=3, init_actions=[1, 0, 0, 0, 1]),
-            [[1, 0, 0, 0, 1],
-             [1, 1, 0, 1, 1],
-             [1, 1, 1, 1, 1]]
-            )
-
-    def test_simulate_with_sequential_revison(self):
-        np.random.seed(60)
-        assert_array_equal(
-            self.li.simulate(ts_length=4, init_actions=[1, 0, 0, 0, 1],
-                             revision='sequential'),
-            [[1, 0, 0, 0, 1],
-             [1, 1, 0, 0, 1],
-             [1, 1, 1, 0, 1],
-             [1, 1, 1, 1, 1]]
-            )
+    def test_time_series(self):
+        init_actions = (0,0,1)
+        x = [[0,0,1],
+             [1,0,0],
+             [0,1,1]]
+        assert_array_equal(self.li.time_series(ts_length=3,
+                                               init_actions=init_actions), x)
 
 
 # Invalid inputs #
