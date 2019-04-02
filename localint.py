@@ -53,16 +53,13 @@ class LocalInteraction():
     def _play(self, actions, player_ind=None):
         if player_ind is None:
             player_ind = list(range(self.N))
-        
+
         actions_matrix = sparse.csr_matrix(
             (np.ones(self.N, dtype=int), actions, np.arange(self.N+1)),
             shape=(self.N, self.num_actions))
 
         opponent_act_dict = self.adj_matrix[player_ind].dot(
             actions_matrix).toarray()
-
-        if player_ind is None:
-            player_ind = list(range(self.N))
 
         for k, i in enumerate(player_ind):
             actions[k] = self.players[i].best_response(
