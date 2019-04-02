@@ -3,6 +3,7 @@ Tools for local interaction model
 
 =#
 
+using Games
 using SparseArrays
 
 
@@ -241,7 +242,7 @@ Return the actions of each players after `num_reps` times iteration.
 - `::PureActionProfile` : Actions of each players after iterations.
 """
 function play(li::LocalInteraction{N},
-              actions::PureActionProfile,
+              actions::Games.PureActionProfile,
               player_ind::Union{AbstractVector{<:Integer},Integer},
               options::BROptions=BROptions();
               num_reps::Integer=1) where N
@@ -269,7 +270,7 @@ Return the actions of each players after `num_reps` times iteration.
 - `::PureActionProfile` : Action profile of each players after iterations.
 """
 function play(li::LocalInteraction{N},
-              actions::PureActionProfile,
+              actions::Games.PureActionProfile,
               options::BROptions=BROptions();
               num_reps::Integer=1) where N
     play(li, actions, 1:N, options, num_reps=num_reps)
@@ -371,7 +372,7 @@ Return the time series of actions given player index sequence.
 function time_series(rng::AbstractRNG,
                      li::LocalInteraction{N},
                      ts_length::Integer,
-                     init_actions::PureActionProfile,
+                     init_actions::Games.PureActionProfile,
                      player_ind_seq::Vector{<:Integer},
                      options::BROptions=BROptions()) where N
     out = Matrix{Int}(undef, N, ts_length)
@@ -381,8 +382,10 @@ function time_series(rng::AbstractRNG,
     time_series!(li, out, options, player_ind_seq)
 end
 
-time_series(li::LocalInteraction, ts_length::Integer,
-            init_actions::PureActionProfile, player_ind_seq::Vector{<:Integer},
+time_series(li::LocalInteraction,
+            ts_length::Integer,
+            init_actions::Games.PureActionProfile,
+            player_ind_seq::Vector{<:Integer},
             options::BROptions=BROptions()) =
     time_series(Random.GLOBAL_RNG, li, ts_length, init_actions, player_ind_seq,
                 options)
@@ -409,7 +412,7 @@ Return the time series of actions. All players take their actions simultaneously
 function time_series(rng::AbstractRNG,
                      li::LocalInteraction{N,T,S,A,TR},
                      ts_length::Integer,
-                     init_actions::PureActionProfile,
+                     init_actions::Games.PureActionProfile,
                      options::BROptions=BROptions()
                     ) where {N,T,S,A,TR<:SimultaneousRevision}
     out = Matrix{Int}(undef, N, ts_length)
@@ -421,7 +424,7 @@ end
 
 time_series(li::LocalInteraction{N,T,S,A,TR},
             ts_length::Integer,
-            init_actions::PureActionProfile,
+            init_actions::Games.PureActionProfile,
             options::BROptions=BROptions()
            ) where {N,T,S,A,TR<:SimultaneousRevision} =
     time_series(Random.GLOBAL_RNG, li, ts_length, init_actions, options)
@@ -448,7 +451,7 @@ Return the time series of actions.
 function time_series(rng::AbstractRNG,
                      li::LocalInteraction{N,T,S,A,TR},
                      ts_length::Integer,
-                     init_actions::PureActionProfile,
+                     init_actions::Games.PureActionProfile,
                      options::BROptions=BROptions()
                     ) where {N,T,S,A,TR<:SequencialRevision}
     player_ind_seq = rand(rng, 1:N, ts_length-1)
@@ -457,7 +460,7 @@ end
 
 time_series(li::LocalInteraction{N,T,S,A,TR},
             ts_length::Integer,
-            init_actions::PureActionProfile,
+            init_actions::Games.PureActionProfile,
             options::BROptions=BROptions()
            ) where {N,T,S,A,TR<:SequencialRevision} =
     time_series(Random.GLOBAL_RNG, li, ts_length, init_actions, options)
