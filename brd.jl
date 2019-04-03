@@ -3,6 +3,8 @@
 
 =#
 
+using Games
+using Random
 using StatsBase
 
 
