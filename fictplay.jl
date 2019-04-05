@@ -368,7 +368,7 @@ function play(rng::AbstractRNG,
               fp::AbstractFictitiousPlay{N},
               options::BROptions=BROptions();
               num_reps::Integer=1, t_init::Integer=1) where {N}
-    play!(rng, fp, random_mixed_actions(rng, fp.nums_actions), options,
+    play!(rng, fp, random_mixed_actions(fp.nums_actions), options,
           num_reps=num_reps, t_init=t_init)
 end
 
@@ -514,7 +514,7 @@ function time_series(rng::AbstractRNG,
                      ts_length::Integer,
                      options::BROptions=BROptions();
                      t_init::Integer=1) where {N}
-    time_series(rng, fp, ts_length, random_mixed_actions(rng, fp.nums_actions),
+    time_series(rng, fp, ts_length, random_mixed_actions(fp.nums_actions),
                 options, t_init=t_init)
 end
 
