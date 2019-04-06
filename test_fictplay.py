@@ -8,6 +8,7 @@ from __future__ import division
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal, \
                           assert_almost_equal
+from scipy.stats import norm
 
 from fictplay import FictitiousPlay, StochasticFictitiousPlay
 
@@ -67,7 +68,9 @@ class Test_StochasticFictitiosuPlay_DecreaingGain:
     def setUp(self):
         matching_pennies = [[( 1, -1), (-1,  1)],
                             [(-1,  1), ( 1, -1)]]
-        self.fp = StochasticFictitiousPlay(matching_pennies,distribution='extreme')
+        distribution = norm()
+        self.fp = StochasticFictitiousPlay(matching_pennies,
+                                           distribution=distribution)
 
     def test_play(self):
         init_actions = (0, 0)
@@ -86,7 +89,10 @@ class Test_StochasticFictitiosuPlay_ConstantGain:
     def setUp(self):
         matching_pennies = [[( 1, -1), (-1,  1)],
                             [(-1,  1), ( 1, -1)]]
-        self.fp = StochasticFictitiousPlay(matching_pennies,gain=0.1,distribution='extreme')
+        distribution = norm()
+        self.fp = StochasticFictitiousPlay(matching_pennies,
+                                           distribution=distribution,
+                                           gain=0.1)
 
     def test_play(self):
         init_actions = (0, 0)
