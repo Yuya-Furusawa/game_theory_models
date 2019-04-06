@@ -4,7 +4,7 @@ from normal_form_game import *
 from random_game import random_pure_actions
 
 
-class FictitiousPlay():
+class FictitiousPlay:
     """
     Class representing the fictitious play model.
 
@@ -146,33 +146,20 @@ class StochasticFictitiousPlay(FictitiousPlay):
         decreasing gain model. If gain is scalar, the model becomes constant
         constant gain model.
 
-    distribution : {'extreme', 'normal'}, optional(default='extreme')
-        The distribution of payoff shocks. If 'extreme', the distribution is
-        type I extreme distribution. If 'normal', the distribution is standard
-        normal distribution.
+    distribution : scipy.stats object
+        statistical distribution from scipy.stats
 
     Attributes
     ----------
     See attributes of FictitousPlay.
     """
 
-    def __init__(self, data, gain=None,
-                 distribution='extreme', random_state=None):
+    def __init__(self, data, distribution, gain=None, random_state=None):
         FictitiousPlay.__init__(self, data, gain)
 
         random_state = check_random_state(random_state)
-        if distribution == 'extreme':
-            loc = -np.euler_gamma * np.sqrt(6) / np.pi
-            scale = np.sqrt(6) / np.pi
-            self.payoff_perturbation_dist = \
-                lambda size: random_state.gumbel(
-                                                 loc=loc, scale=scale, size=size
-                                                )
-        elif distribution == 'normal':  # standard normal distribution
-            self.payoff_perturbation_dist = \
-                lambda size: random_state.standard_normal(size=size)
-        else:
-            raise ValueError("`distribution` must be 'extreme' or 'normal'")
+        self.payoff_perturbation_dist = \
+            lambda size: distribution.rvs(size=size, random_state=random_state)
 
         self.tie_breaking = 'smallest'
 
