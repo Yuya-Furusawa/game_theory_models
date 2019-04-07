@@ -4,7 +4,7 @@ from random_game import random_pure_actions
 from util import check_random_state
 
 
-class BRD():
+class BRD:
     """
     Class representing the best response dynamics model.
 
@@ -107,12 +107,12 @@ class KMR(BRD):
 
     def play(self, action, action_dist, random_state=None):
         random_state = check_random_state(random_state)
-        if random_state.random() < self.epsilon:  # Mutation
+        if random_state.rand() < self.epsilon:  # Mutation
             action_dist[action] -= 1
             next_action = self.player.random_choice(random_state=random_state)
             action_dist[next_action] += 1
         else:  # Best response
-            BRD.play(self, current_action)
+            BRD.play(self, action, action_dist)
         return action_dist
 
 
@@ -153,10 +153,11 @@ class SamplingBRD(BRD):
 
     def play(self, action, action_dist, random_state=None):
         random_state = check_random_state(random_state)
-        action_dist[current_action] -= 1
+        action_dist[action] -= 1
         actions = random_state.choice(self.num_actions, size=self.k,
                                       replace=True, p=action_dist/(self.N-1))
         sample_action_dist = np.bincount(actions, minlength=self.num_actions)
         next_action = self.player.best_response(sample_action_dist,
                                                 tie_breaking=self.tie_breaking)
         action_dist[next_action] += 1
+        return action_dist
