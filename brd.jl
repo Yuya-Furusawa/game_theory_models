@@ -97,7 +97,7 @@ function KMR(N::Integer,
     if num_actions != size(payoff_array, 2)
         throw(ArgumentError("Payoff array must be square"))
     end
-    return BRD(N, Player(payoff_array), num_actions, epsilon)
+    return KMR(N, Player(payoff_array), num_actions, epsilon)
 end
 
 """
@@ -142,7 +142,7 @@ function SamplingBRD(N::Integer,
     if num_actions != size(payoff_array, 2)
         throw(ArgumentError("Payoff array must be square"))
     end
-    return BRD(N, Player(payoff_array), num_actions, k)
+    return SamplingBRD(N, Player(payoff_array), num_actions, k)
 end
 
 # play!
@@ -205,7 +205,7 @@ function play!(rng::AbstractRNG,
     if rand() <= brd.epsilon
         next_action = rand(rng, 1:brd.num_actions)
     else
-        next_action = best_response(brd.player, actions, options)
+        next_action = best_response(brd.player, action_dist, options)
     end
     action_dist[next_action] += 1
     return action_dist
@@ -239,7 +239,7 @@ function play!(rng::AbstractRNG,
                options::BROptions)
     action_dist[action] -= 1
     actions = sample(1:brd.num_actions, Weights(action_dist), brd.k)
-    sample_action_dist = zeros(brd.num_actions, dtype=Int)
+    sample_action_dist = zeros(Int, brd.num_actions)
     for a in actions
         sample_action_dist[a] += 1
     end
@@ -292,7 +292,7 @@ end
 
 # time_series
 
-function _set_action_dist(brd::AbstractBRD, actions::PureActionProfile)
+function _set_action_dist(brd::AbstractBRD, actions::Games.PureActionProfile)
     if brd.N != length(actions)
         throw(ArgumentError("The length of action profile must
                              equal to the number of players"))
@@ -325,19 +325,20 @@ Return the time series of action distribution.
 function time_series(rng::AbstractRNG,
                      brd::AbstractBRD,
                      ts_length::Integer,
-                     init_actions::PureActionProfile,
+                     init_actions::Games.PureActionProfile,
                      options::BROptions=BROptions())
-    player_ind_seq = rand(1:brd.N, ts_length)
+    player_ind_seq = rand(rng, 1:brd.N, ts_length)
     action_dist = _set_action_dist(brd, init_actions)
     out = Matrix{Int}(undef, brd.num_actions, ts_length)
     for i in 1:brd.num_actions
-        out[i,1] = action_dist[i]
+        out[i, 1] = action_dist[i]
     end
     time_series!(rng, brd, out, player_ind_seq, options)
 end
 
 time_series(brd::AbstractBRD, ts_length::Integer,
-            init_actions::PureActionProfile, options::BROptions=BROptions()) =
+            init_actions::Games.PureActionProfile,
+            options::BROptions=BROptions()) =
     time_series(Random.GLOBAL_RNG, brd, ts_length, init_actions, options)
 
 """
