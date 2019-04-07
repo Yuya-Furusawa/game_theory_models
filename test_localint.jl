@@ -24,7 +24,7 @@ include("localint.jl")
     end
 
     @testset "Testing local interaction with sequencial revision" begin
-        li = LocalInteraction(payoff_matrix, adj_matrix, SequencialRevision())
+        li = LocalInteraction(payoff_matrix, adj_matrix, AsynchronousRevision())
 
         @test @inferred(play(li,init_actions,1) == (2,1,2))
         @test @inferred(time_series(li,3,init_actions,[1,2]) ==
