@@ -17,7 +17,7 @@ include("brd.jl")
 
     @testset "Testing best response dynamics model" begin
         
-        brd = BRD(N, payoff_matrix)
+        brd = BRD(payoff_matrix, N)
         @test @inferred(time_series(brd, ts_length, init_actions)) ==
               [4 4 4; 0 0 0]
     end
@@ -25,7 +25,7 @@ include("brd.jl")
     @testset "Testing KMR model" begin
         
         epsilon = 0.1
-        kmr = KMR(N, payoff_matrix, epsilon)
+        kmr = KMR(payoff_matrix, N, epsilon)
         series = time_series(kmr, ts_length, init_actions)
         for t in 1:3
             @test sum(series[:, t]) == 4
@@ -35,7 +35,7 @@ include("brd.jl")
     @testset "Testing sampling best response dynamics model" begin
         
         k = 2
-        sbrd = SamplingBRD(N, payoff_matrix, k)
+        sbrd = SamplingBRD(payoff_matrix, N, k)
         series = time_series(sbrd, ts_length, init_actions)
         for t in 1:3
             @test sum(series[:, t]) == 4

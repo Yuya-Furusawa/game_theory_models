@@ -48,7 +48,7 @@ Create a new BRD instance.
 
 - `::BRD`
 """
-function BRD(N::Integer, payoff_array::Matrix{T}) where {T<:Real}
+function BRD(payoff_array::Matrix{T}, N::Integer) where {T<:Real}
     num_actions = size(payoff_array, 1)
     if num_actions != size(payoff_array, 2)
         throw(ArgumentError("Payoff array must be square"))
@@ -90,8 +90,8 @@ Create a new KMR instance.
 
 - `::KMR`
 """
-function KMR(N::Integer,
-             payoff_array::Matrix{T},
+function KMR(payoff_array::Matrix{T},
+             N::Integer,
              epsilon::Float64) where {T<:Real}
     num_actions = size(payoff_array, 1)
     if num_actions != size(payoff_array, 2)
@@ -135,8 +135,8 @@ Create a new SamplingBRD instance.
 
 - `::SamplingBRD`
 """
-function SamplingBRD(N::Integer,
-                     payoff_array::Matrix{T},
+function SamplingBRD(payoff_array::Matrix{T},
+                     N::Integer,
                      k::Integer) where {T<:Real}
     num_actions = size(payoff_array, 1)
     if num_actions != size(payoff_array, 2)
@@ -297,7 +297,7 @@ function _set_action_dist(brd::AbstractBRD, actions::Games.PureActionProfile)
         throw(ArgumentError("The length of action profile must
                              equal to the number of players"))
     end
-    action_dist = zeros(brd.num_actions)
+    action_dist = zeros(Int, brd.num_actions)
     for i in 1:brd.N
         action_dist[actions[i]] += 1
     end
