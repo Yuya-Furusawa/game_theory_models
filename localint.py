@@ -53,6 +53,8 @@ class LocalInteraction():
     def _play(self, actions, player_ind=None):
         if player_ind is None:
             player_ind = list(range(self.N))
+        elif isinstance(player_ind, numbers.Integral):
+            player_ind = [player_ind]
 
         actions_matrix = sparse.csr_matrix(
             (np.ones(self.N, dtype=int), actions, np.arange(self.N+1)),
@@ -116,7 +118,7 @@ class LocalInteraction():
         ts_length : scalar(int)
             The number of iterations.
 
-        revision : {'simultaneous', 'sequencial'}(default='simultaneous')
+        revision : {'simultaneous', 'asynchronous'}(default='simultaneous')
             The revision method.
 
         init_actions : tuple(int), optional(default=None)
@@ -137,12 +139,14 @@ class LocalInteraction():
 
         if revision == 'simultaneous':
             player_ind_seq = [None] * ts_length
-        elif revision == 'sequencial':
+        elif revision == 'asynchronous':
             if player_ind_seq is None:
                 random_state = check_random_state(random_state)
-                player_ind_seq = random_state.randint(self.N, ts_length)
+                player_ind_seq = random_state.randint(self.N, size=ts_length)
         else:
-            raise ValueError("revision must be `simultaneous` or `sequencial`")
+            raise ValueError(
+                             "revision must be `simultaneous` or `asynchronous`"
+                            )
 
         actions = [action for action in init_actions]
         out = np.empty((ts_length, self.N), dtype=int)
