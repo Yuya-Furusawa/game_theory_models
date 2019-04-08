@@ -6,7 +6,7 @@ from normal_form_game import *
 from random_game import random_pure_actions
 
 
-class LocalInteraction():
+class LocalInteraction:
     """
     Class representing the local interaction model.
 
@@ -64,7 +64,7 @@ class LocalInteraction():
             actions_matrix).toarray()
 
         for k, i in enumerate(player_ind):
-            actions[k] = self.players[i].best_response(
+            actions[i] = self.players[i].best_response(
                 opponent_act_dict[k, :],
                 tie_breaking=self.tie_breaking)
 
