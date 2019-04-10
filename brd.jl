@@ -202,7 +202,7 @@ function play!(rng::AbstractRNG,
                action_dist::Vector{<:Integer},
                options::BROptions)
     action_dist[action] -= 1
-    if rand() <= brd.epsilon
+    if rand(rng) <= brd.epsilon
         next_action = rand(rng, 1:brd.num_actions)
     else
         next_action = best_response(brd.player, action_dist, options)
@@ -305,7 +305,7 @@ function _set_action_dist(brd::AbstractBRD, actions::Games.PureActionProfile)
 end
 
 """
-    time_series(rng, brd, ts_length, init_actions, options)
+    time_series(rng, brd, ts_length, init_action_dist, options)
 
 Return the time series of action distribution.
 
@@ -314,7 +314,44 @@ Return the time series of action distribution.
 - `rng::AbstractRNG` : Random number generator used.
 - `brd::AbstractBRD` : Instance of the model.
 - `ts_length::Integer` : The length of time series.
-- `init_actions::PureActionProfile` : Initial actions.
+- `init_action_dist::Vector{Integer}` : Initial action distribution.
+- `options::BROptions` : Options for `best_response` method;
+    defaults to `BROptions()`.
+
+# Returns
+
+- `::Matrix{<:Integer}` : Time series of action distribution.
+"""
+function time_series(rng::AbstractRNG,
+                     brd::AbstractBRD,
+                     ts_length::Integer,
+                     init_action_dist::Vector{<:Integer},
+                     options::BROptions=BROptions())
+    player_ind_seq = rand(rng, 1:brd.N, ts_length)
+    out = Matrix{Int}(undef, brd.num_actions, ts_length)
+    for i in 1:brd.num_actions
+        out[i, 1] = init_action_dist[i]
+    end
+    time_series!(rng, brd, out, player_ind_seq, options)
+end
+
+time_series(brd::AbstractBRD, ts_length::Integer,
+            init_action_dist::Vector{<:Integer},
+            options::BROptions=BROptions()) =
+    time_series(Random.GLOBAL_RNG, brd, ts_length, init_action_dist, options)
+
+"""
+    time_series(rng, brd, ts_length, init_actions, options)
+
+Return the time series of action distribution.
+
+# Arguments
+
+- `rng::AbstractRNG` : Random number generator used;
+    defaults to `Random.GLOBAL_RNG`
+- `brd::AbstractBRD` : Instance of the model.
+- `ts_length::Integer` : The length of time series.
+- `init_actions::Games.PureActionProfile` : Initial actions.
 - `options::BROptions` : Options for `best_response` method;
     defaults to `BROptions()`.
 
@@ -327,16 +364,12 @@ function time_series(rng::AbstractRNG,
                      ts_length::Integer,
                      init_actions::Games.PureActionProfile,
                      options::BROptions=BROptions())
-    player_ind_seq = rand(rng, 1:brd.N, ts_length)
     action_dist = _set_action_dist(brd, init_actions)
-    out = Matrix{Int}(undef, brd.num_actions, ts_length)
-    for i in 1:brd.num_actions
-        out[i, 1] = action_dist[i]
-    end
-    time_series!(rng, brd, out, player_ind_seq, options)
+    time_series(rng, brd, ts_length, action_dist, options)
 end
 
-time_series(brd::AbstractBRD, ts_length::Integer,
+time_series(brd::AbstractBRD,
+            ts_length::Integer,
             init_actions::Games.PureActionProfile,
             options::BROptions=BROptions()) =
     time_series(Random.GLOBAL_RNG, brd, ts_length, init_actions, options)
@@ -372,3 +405,5 @@ end
 time_series(brd::AbstractBRD, ts_length::Integer,
             options::BROptions=BROptions()) =
     time_series(Random.GLOBAL_RNG, brd, ts_length, options)
+
+
