@@ -53,15 +53,16 @@ class BRD:
         action_dist[next_action] += 1
         return action_dist
 
-    def time_series(self, ts_length, init_actions=None, random_state=None):
-        if init_actions is None:
+    def time_series(self, ts_length, init_action_dist=None, random_state=None):
+        if init_action_dist is None:
             nums_actions = tuple([self.num_actions] * self.N)
             init_actions = random_pure_actions(nums_actions, random_state)
+            init_action_dist = self._set_action_dist(init_actions)
 
         random_state = check_random_state(random_state)
         out = np.empty((ts_length, self.num_actions), dtype=int)
         player_ind_seq = random_state.randint(self.N, size=ts_length)
-        action_dist = self._set_action_dist(init_actions)
+        action_dist = np.asarray(init_action_dist)
         for t in range(ts_length):
             out[t, :] = action_dist[:]
             action = np.searchsorted(action_dist.cumsum(), player_ind_seq[t],

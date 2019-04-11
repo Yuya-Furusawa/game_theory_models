@@ -24,7 +24,7 @@ class TestBRD:
 
     def test_time_series_1(self):
         assert_array_equal(
-            self.brd.time_series(ts_length=3, init_actions=(0,0,0,0)),
+            self.brd.time_series(ts_length=3, init_action_dist=[4, 0]),
             [[4, 0],
              [4, 0],
              [4, 0]]
@@ -33,7 +33,7 @@ class TestBRD:
     def test_time_series_2(self):
         np.random.seed(22)
         assert_array_equal(
-            self.brd.time_series(ts_length=3, init_actions=(0,0,1,1)),
+            self.brd.time_series(ts_length=3, init_action_dist=[2, 2]),
             [[2, 2],
              [1, 3],
              [0, 4]]
@@ -49,7 +49,7 @@ class TestKMR:
         self.kmr = KMR(payoff_matrix, self.N)
 
     def test_time_series(self):
-        series = self.kmr.time_series(ts_length=5, init_actions=(0,0,0,0))
+        series = self.kmr.time_series(ts_length=5, init_action_dist=[4, 0])
         for t in range(5):
             eq_(sum(series[t, :]), 4)
 
@@ -63,7 +63,7 @@ class TestSamplingBRD:
         self.sbrd = SamplingBRD(payoff_matrix, self.N)
 
     def test_time_series(self):
-        series = self.sbrd.time_series(ts_length=5, init_actions=(0,0,0,0))
+        series = self.sbrd.time_series(ts_length=5, init_action_dist=[4, 0])
         for t in range(5):
             eq_(sum(series[t, :]), 4)
 
