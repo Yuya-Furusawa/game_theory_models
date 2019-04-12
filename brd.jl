@@ -277,9 +277,9 @@ function time_series!(rng::AbstractRNG,
                       out::Matrix{<:Integer},
                       player_ind_seq::Vector{<:Integer},
                       options::BROptions)
-    ts_length = size(out, 1)
+    ts_length = size(out, 2)
     action_dist = [out[i,1] for i in 1:brd.num_actions]
-    for t in 1:ts_length
+    for t in 1:ts_length-1
         action = searchsortedfirst(accumulate(+, action_dist), player_ind_seq[t])
         action_dist = play!(rng, brd, action, action_dist, options)
         for i in 1:brd.num_actions
