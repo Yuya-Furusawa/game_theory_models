@@ -31,12 +31,12 @@ class TestBRD:
             )
 
     def test_time_series_2(self):
-        np.random.seed(22)
         assert_array_equal(
-            self.brd.time_series(ts_length=3, init_action_dist=[2, 2]),
+            self.brd.time_series(ts_length=3, init_action_dist=[2, 2],
+                                 random_state=np.random.RandomState(1234)),
             [[2, 2],
-             [1, 3],
-             [0, 4]]
+             [3, 1],
+             [4, 0]]
             )
 
 class TestKMR:
@@ -49,9 +49,13 @@ class TestKMR:
         self.kmr = KMR(payoff_matrix, self.N)
 
     def test_time_series(self):
-        series = self.kmr.time_series(ts_length=5, init_action_dist=[4, 0])
-        for t in range(5):
-            eq_(sum(series[t, :]), 4)
+        assert_array_equal(
+            self.kmr.time_series(ts_length=3, init_action_dist=[2, 2],
+                                 random_state=np.random.RandomState(1234)),
+            [[2, 2],
+             [3, 1],
+             [4, 0]]
+            )
 
 class TestSamplingBRD:
     '''Test the methods of SamplingBRD'''
@@ -63,9 +67,14 @@ class TestSamplingBRD:
         self.sbrd = SamplingBRD(payoff_matrix, self.N)
 
     def test_time_series(self):
-        series = self.sbrd.time_series(ts_length=5, init_action_dist=[4, 0])
-        for t in range(5):
-            eq_(sum(series[t, :]), 4)
+        assert_array_equal(
+            self.sbrd.time_series(ts_length=3, init_action_dist=[2, 2],
+                                 random_state=np.random.RandomState(1234)),
+            [[2, 2],
+             [2, 2],
+             [2, 2]]
+            )
+
 
 
 

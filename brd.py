@@ -46,7 +46,7 @@ class BRD:
             action_dist[actions[i]] += 1
         return action_dist
 
-    def play(self, action, action_dist):
+    def play(self, action, action_dist, random_state=None):
         action_dist[action] -= 1
         next_action = self.player.best_response(action_dist,
                                                 tie_breaking=self.tie_breaking)
@@ -67,7 +67,7 @@ class BRD:
             out[t, :] = action_dist[:]
             action = np.searchsorted(action_dist.cumsum(), player_ind_seq[t],
                                      side='right')
-            action_dist = self.play(action, action_dist)
+            action_dist = self.play(action, action_dist, random_state)
         return out
 
 
@@ -110,6 +110,7 @@ class KMR(BRD):
         random_state = check_random_state(random_state)
         if random_state.rand() < self.epsilon:  # Mutation
             action_dist[action] -= 1
+            random_state = check_random_state(random_state)
             next_action = self.player.random_choice(random_state=random_state)
             action_dist[next_action] += 1
         else:  # Best response
