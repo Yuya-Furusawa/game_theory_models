@@ -50,7 +50,7 @@ class FictitiousPlay:
         else:
             self.step_size = lambda t: gain  # constant gain
 
-    def _play(self, actions, t):
+    def _play(self, actions, t, random_state=None):
         brs = np.zeros(self.N, dtype=int)
         for i, player in enumerate(self.players):
             index = [j for j in range(i+1, self.N)]
@@ -87,13 +87,14 @@ class FictitiousPlay:
         tuple(int)
             The action profile after iteration.
         """
+        random_state = check_random_state(random_state)
         if init_actions is None:
             init_actions = random_pure_actions(self.nums_actions, random_state)
         actions = [i for i in init_actions]
         for i in range(self.N):
             actions[i] = pure2mixed(self.nums_actions[i], init_actions[i])
         for t in range(num_reps):
-            actions = self._play(actions, t+t_init)
+            actions = self._play(actions, t+t_init, random_state)
         return actions
 
     def time_series(self, ts_length, init_actions=None, t_init=0,
@@ -117,6 +118,7 @@ class FictitiousPlay:
         Array
             The array representing time series of normalized action history.
         """
+        random_state = check_random_state(random_state)
         if init_actions is None:
             init_actions = random_pure_actions(self.nums_actions, random_state)
         out = [np.empty((ts_length, self.nums_actions[i]))
@@ -127,7 +129,7 @@ class FictitiousPlay:
         for t in range(ts_length):
             for i in range(self.N):
                 out[i][t, :] = actions[i][:]
-            actions = self._play(actions, t+t_init)
+            actions = self._play(actions, t+t_init, random_state)
         return out
 
 
@@ -154,23 +156,25 @@ class StochasticFictitiousPlay(FictitiousPlay):
     See attributes of FictitousPlay.
     """
 
-    def __init__(self, data, distribution, gain=None, random_state=None):
+    def __init__(self, data, distribution, gain=None):
         FictitiousPlay.__init__(self, data, gain)
 
-        random_state = check_random_state(random_state)
         self.payoff_perturbation_dist = \
-            lambda size: distribution.rvs(size=size, random_state=random_state)
+            lambda size, random_state: distribution.rvs(size=size,
+                                            random_state=random_state)
 
         self.tie_breaking = 'smallest'
 
-    def _play(self, actions, t):
+    def _play(self, actions, t, random_state=None):
+        random_state = check_random_state(random_state)
         brs = np.zeros(self.N, dtype=int)
         for i, player in enumerate(self.players):
             index = [j for j in range(i+1, self.N)]
             index.extend([j for j in range(i)])
             opponent_actions = np.asarray([actions[i] for i in index])
             payoff_perturbation = \
-                self.payoff_perturbation_dist(size=self.nums_actions[i])
+                self.payoff_perturbation_dist(size=self.nums_actions[i],
+                                              random_state=random_state)
             brs[i] = player.best_response(
                 opponent_actions if self.N > 2 else opponent_actions[0],
                 tie_breaking=self.tie_breaking,
