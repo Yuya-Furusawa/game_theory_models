@@ -93,6 +93,7 @@ class LocalInteraction:
         tuple(int)
             The action profile after iteration.
         """
+        random_state = check_random_state(random_state)
         if init_actions is None:
             nums_actions = tuple([self.num_actions] * self.N)
             init_actions = random_pure_actions(nums_actions, random_state)
@@ -133,6 +134,7 @@ class LocalInteraction:
         Array
             The array representing time series of each player's actions.
         """
+        random_state = check_random_state(random_state)
         if init_actions is None:
             nums_actions = tuple([self.num_actions] * self.N)
             init_actions = random_pure_actions(nums_actions, random_state)
@@ -141,7 +143,6 @@ class LocalInteraction:
             player_ind_seq = [None] * ts_length
         elif revision == 'asynchronous':
             if player_ind_seq is None:
-                random_state = check_random_state(random_state)
                 player_ind_seq = random_state.randint(self.N, size=ts_length)
         else:
             raise ValueError(

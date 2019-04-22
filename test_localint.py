@@ -15,34 +15,46 @@ class TestLocalInteraction:
 
     def setUp(self):
         '''Setup a LocalInteraction instance'''
-        payoff_matrix = np.asarray([[4,0],[2,3]])
+        payoff_matrix = np.asarray([[4, 0],[2, 3]])
         adj_matrix = np.asarray([[0, 1, 3],
                                  [2, 0, 1],
                                  [3, 2, 0]])
         self.li = LocalInteraction(payoff_matrix, adj_matrix)
 
     def test_play(self):
-        init_actions = (0,0,1)
-        x = (1,0,0)
+        init_actions = (0, 0, 1)
+        x = (1, 0, 0)
         assert_equal(self.li.play(init_actions=init_actions), x)
 
     def test_time_series_simultaneous_revision(self):
-        init_actions = (0,0,1)
-        x = [[0,0,1],
-             [1,0,0],
-             [0,1,1]]
+        init_actions = (0, 0, 1)
+        x = [[0, 0, 1],
+             [1, 0, 0],
+             [0, 1, 1]]
         assert_array_equal(self.li.time_series(ts_length=3,
                                                init_actions=init_actions), x)
 
     def test_time_series_asynchronous_revision(self):
-        init_actions = (0,0,1)
-        player_ind_seq = [0,1,2]
-        x = [[0,0,1],
-             [1,0,1],
-             [1,1,1]]
+        init_actions = (0, 0, 1)
+        x = [[0, 0, 1],
+             [0, 0, 0],
+             [0, 0, 0]]
+        assert_array_equal(self.li.time_series(
+                                        ts_length=3,
+                                        revision='asynchronous',
+                                        init_actions=init_actions,
+                                        random_state=np.random.RandomState(1234)
+                                        ), x)
+
+    def test_time_series_asynchronous_revision_with_player_index(self):
+        init_actions = (0, 0, 1)
+        player_ind_seq = [0, 1, 2]
+        x = [[0, 0, 1],
+             [1, 0, 1],
+             [1, 1, 1]]
         assert_array_equal(self.li.time_series(ts_length=3,
-                                               init_actions=init_actions,
                                                revision='asynchronous',
+                                               init_actions=init_actions,
                                                player_ind_seq=player_ind_seq),
                            x)
         
