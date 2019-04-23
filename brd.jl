@@ -282,6 +282,15 @@ function play(rng::AbstractRNG,
               init_action_dist::Vector{<:Integer},
               options::BROptions=BROptions();
               num_reps::Integer=1)
+    if length(init_action_dist) != brd.num_actions
+        throw(ArgumentError("The length of init_action_dist must be the number
+                             of actions"))
+    end
+    if sum(init_action_dist) != brd.N
+        throw(ArgumentError("The sum of init_action_dist must be the number of
+                             players"))
+    end
+
     player_ind_seq = rand(rng, 1:brd.N, num_reps)
     for t in 1:num_reps
         action = searchsortedfirst(accumulate(+, init_action_dist),
@@ -356,6 +365,15 @@ function time_series(rng::AbstractRNG,
                      ts_length::Integer,
                      init_action_dist::Vector{<:Integer},
                      options::BROptions=BROptions())
+    if length(init_action_dist) != brd.num_actions
+        throw(ArgumentError("The length of init_action_dist must be the number
+                             of actions"))
+    end
+    if sum(init_action_dist) != brd.N
+        throw(ArgumentError("The sum of init_action_dist must be the number of
+                             players"))
+    end
+    
     player_ind_seq = rand(rng, 1:brd.N, ts_length)
     out = Matrix{Int}(undef, brd.num_actions, ts_length)
     for i in 1:brd.num_actions
