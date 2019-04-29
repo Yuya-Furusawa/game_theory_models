@@ -35,16 +35,14 @@ class TestLocalInteraction:
                                                init_actions=init_actions), x)
 
     def test_time_series_asynchronous_revision(self):
+        seed = 1234
         init_actions = (0, 0, 1)
-        x = [[0, 0, 1],
-             [0, 0, 0],
-             [0, 0, 0]]
-        assert_array_equal(self.li.time_series(
-                                        ts_length=3,
-                                        revision='asynchronous',
-                                        init_actions=init_actions,
-                                        random_state=np.random.RandomState(1234)
-                                        ), x)
+        x = [self.li.time_series(ts_length=3,
+                                 revision='asynchronous',
+                                 init_actions=init_actions,
+                                 random_state=np.random.RandomState(seed)
+                                ) for i in range(2)]
+        assert_array_equal(x[0], x[1])
 
     def test_time_series_asynchronous_revision_with_player_index(self):
         init_actions = (0, 0, 1)
