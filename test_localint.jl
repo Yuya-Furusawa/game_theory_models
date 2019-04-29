@@ -24,12 +24,13 @@ include("localint.jl")
                         [1 2 1; 1 1 2; 2 1 2])
     end
 
-    @testset "Testing local interaction with sequencial revision" begin
+    @testset "Testing local interaction with asynchronous revision" begin
+        seed = 1234
         li = LocalInteraction(payoff_matrix, adj_matrix, AsynchronousRevision())
 
         @test @inferred(play(li, init_actions, 1) == (2,1,2))
-        @test @inferred(time_series(MersenneTwister(1234), li, 3, init_actions
-                        ) == [1 2 2; 1 1 1; 2 2 2])
+        @test @inferred(time_series(MersenneTwister(seed), li, 3, init_actions
+                        ) == time_series(MersenneTwister(seed), li, 3, init_actions))
         @test @inferred(time_series(li, 3, init_actions, [1,2]) ==
                         [1 2 2; 1 1 2; 2 2 2])
     end

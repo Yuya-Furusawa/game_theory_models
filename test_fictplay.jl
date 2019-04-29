@@ -53,29 +53,30 @@ include("fictplay.jl")
     @testset "Testing stochastic fictitious play" begin
 
         normal = Normal()  #standard normal distribution
+        seed = 1234  #seed for random number generator
 
         sfp_dec = StochasticFictitiousPlay(g, normal)
-        x = play(MersenneTwister(1234), sfp_dec, init_actions)
-        x_series = time_series(MersenneTwister(1234), sfp_dec, 3, init_actions)
-        x_des = ([1.0, 0.0], [0.5, 0.5])
-        x_series_des = ([1.0 1.0 2/3; 0.0 0.0 1/3], [1.0 0.5 1/3; 0.0 0.5 2/3])
+        x = [play(MersenneTwister(seed), sfp_dec, init_actions) for i in 1:2]
+        x_series = [time_series(MersenneTwister(seed), sfp_dec, 3, init_actions)
+                    for i in 1:2]
 
         sfp_con = StochasticFictitiousPlay(g, normal, ConstantGain(gain))
-        y = play(MersenneTwister(1234), sfp_con, init_actions)
-        y_series = time_series(MersenneTwister(1234), sfp_con, 3, init_actions)
+        y = [play(MersenneTwister(seed), sfp_con, init_actions) for i in 1:2]
+        y_series = [time_series(MersenneTwister(seed), sfp_con, 3, init_actions)
+                    for i in 1:2]
         y_des = ([1.0, 0.0], [0.9, 0.1])
         y_series_des = ([1.0 1.0 1.0; 0.0 0.0 0.0], [1.0 0.9 0.81; 0.0 0.1 0.19])
 
         for (i, j) in ((1, 1), (1, 2), (2, 1), (2, 2))
-            @test x[i][j] ≈ x_des[i][j]
-            @test y[i][j] ≈ y_des[i][j]
+            @test x[1][i][j] ≈ x[2][i][j]
+            @test y[1][i][j] ≈ y[2][i][j]
         end
 
         for k in 1:2
             for i in 1:2
                 for j in 1:3
-                    @test x_series[k][i, j] ≈ x_series_des[k][i, j]
-                    @test y_series[k][i, j] ≈ y_series_des[k][i, j]
+                    @test x_series[1][k][i, j] ≈ x_series[2][k][i, j]
+                    @test y_series[1][k][i, j] ≈ y_series[2][k][i, j]
                 end
             end
         end
