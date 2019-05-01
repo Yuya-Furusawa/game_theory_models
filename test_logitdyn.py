@@ -26,22 +26,19 @@ class TestLogitDynamics:
         g = NormalFormGame(payoff_matrix)
         self.ld = LogitDynamics(g, beta=beta)
 
-    def test_simulate_seed(self):
-        seq = self.ld.time_series(ts_length=10, init_actions=(0, 0),
-                                  random_state=np.random.RandomState(291))
-        assert_array_equal(
-            seq,
-            [[0, 0],
-             [0, 0],
-             [0, 0],
-             [0, 1],
-             [1, 1],
-             [1, 1],
-             [1, 1],
-             [1, 1],
-             [1, 1],
-             [1, 1]]
-        )
+    def test_play(self):
+        seed = 1234
+        x = [self.ld.play(init_actions=(0,0),
+                          random_state=np.random.RandomState(seed))
+             for i in range(2)]
+        assert_array_equal(x[0], x[1])
+
+    def test_time_series(self):
+        seed = 1234
+        series = [self.ld.time_series(ts_length=10, init_actions=(0, 0),
+                                      random_state=np.random.RandomState(seed))
+                  for i in range(2)]
+        assert_array_equal(series[0], series[1])
 
 def test_set_choice_probs_with_asymmetric_payoff_matrix():
     bimatrix = np.array([[(4, 4), (1, 1), (0, 3)],

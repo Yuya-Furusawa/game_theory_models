@@ -114,7 +114,7 @@ class KMR(BRD):
             next_action = self.player.random_choice(random_state=random_state)
             action_dist[next_action] += 1
         else:  # Best response
-            BRD.play(self, action, action_dist)
+            action_dist = BRD.play(self, action, action_dist)
         return action_dist
 
 
