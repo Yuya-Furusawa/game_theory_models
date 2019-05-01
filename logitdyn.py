@@ -76,6 +76,28 @@ class LogitDynamics(object):
 
     def play(self, init_actions=None, player_ind_seq=None, num_reps=1,
              random_state=None):
+        """
+        Return a new action profile which is updated `num_reps` times.
+
+        Parameters
+        ----------
+        init_actions : tuple(int), optional(default=None)
+            The action profile in the first period. If None, selected randomly.
+
+        player_ind_seq : list(int), optional(default=None)
+            The sequence of player index. If None, selected randomly.
+
+        num_reps : scalar(int), optional(default=1)
+            The number of iterations.
+
+        random_state : np.random.RandomState, optional(default=None)
+            Random number generator used.
+
+        Return
+        ------
+        tuple(int)
+            The action profile after iteration
+        """
         random_state = check_random_state(random_state)
         if init_actions is None:
             init_actions = random_pure_actions(self.nums_actions, random_state)
@@ -94,6 +116,20 @@ class LogitDynamics(object):
         return tuple(init_actions)
 
     def time_series(self, ts_length, init_actions=None, random_state=None):
+        """
+        Return the array representing time series of action profile.
+
+        Parameters
+        ----------
+        ts_length : scalar(int)
+            The number of iterations.
+
+        init_actions : tuple(int), optional(default=None)
+            The action profile in the first period. If None, selected randomly.
+
+        random_state : np.random.RandomState, optional(default=None)
+            Random number generator used.
+        """
         random_state = check_random_state(random_state)
         if init_actions is None:
             init_actions = random_pure_actions(self.nums_actions, random_state)
@@ -103,8 +139,7 @@ class LogitDynamics(object):
         player_ind_seq = random_state.randint(self.N, size=ts_length)
 
         for t, player_ind in enumerate(player_ind_seq):
-            for i in range(self.N):
-                out[t, i] = actions[i]
+            out[t, :] = actions[:]
             actions[player_ind] = self._play(player_ind, actions, random_state)
 
         return out

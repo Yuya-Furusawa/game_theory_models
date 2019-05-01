@@ -5,7 +5,6 @@ Author: Tomohiro Kusano
 Tests for logitdyn.py
 
 """
-from __future__ import division
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_array_almost_equal_nulp
@@ -27,22 +26,9 @@ class TestLogitDynamics:
         g = NormalFormGame(payoff_matrix)
         self.ld = LogitDynamics(g, beta=beta)
 
-    def test_set_init_actions_with_given_init_actions(self):
-        init_actions = (0, 1)
-        self.ld.set_init_actions(init_actions)
-        assert_array_equal(self.ld.current_actions, init_actions)
-
-    def test_set_init_actions_when_init_action_dist_None(self):
-        self.ld.set_init_actions()  # Action dist randomly chosen
-        init_actions = self.ld.current_actions
-
-        ok_(all(
-            action in list(range(2)) for action in self.ld.current_actions)
-            )
-
     def test_simulate_seed(self):
-        np.random.seed(291)
-        seq = self.ld.simulate(ts_length=10, init_actions=(0, 0))
+        seq = self.ld.time_series(ts_length=10, init_actions=(0, 0),
+                                  random_state=np.random.RandomState(291))
         assert_array_equal(
             seq,
             [[0, 0],
@@ -56,20 +42,6 @@ class TestLogitDynamics:
              [1, 1],
              [1, 1]]
         )
-
-    def test_simulate_lln(self):
-        n = 100
-        T = 1000
-        seq = self.ld.replicate(T=T, num_reps=n)
-        count = 0
-        for i in range(n):
-            if all(seq[i, :] == [1, 1]):
-                count += 1
-        frequency = count / n
-
-        # 0.981367209 = prob that the stationary distribution assigns to [1, 1]
-        ok_(np.abs(frequency-0.981367209) < 0.05)
-
 
 def test_set_choice_probs_with_asymmetric_payoff_matrix():
     bimatrix = np.array([[(4, 4), (1, 1), (0, 3)],
