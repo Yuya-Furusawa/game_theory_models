@@ -43,11 +43,11 @@ Construct a `LogitDynamics` instance.
 - `::LogitDynamics` : New `LogitDynamics` instance.
 """
 function LogitDynamics(g::NormalFormGame{N,T}, beta::S) where {N,T<:Real,S<:Real}
-    logit_choice_cdfs = Vector{Any}(undef, N)
-    for (i, player) in enumerate(lgdy.players)
+    choice_probs = Vector{Any}(undef, N)
+    for (i, player) in enumerate(g.players)
         payoff_array = player.payoff_array
         payoff_array_normalized = payoff_array .- maximum(payoff_array, dims=N)
-        logit_choice_cdfs[i] = cumsum(exp.(payoff_array_normalized .* beta),
+        choice_probs[i] = cumsum(exp.(payoff_array_normalized .* beta),
                                        dims=N)
     end
     return LogitDynamics(g.players, g.nums_actions, beta, choice_probs)
@@ -73,7 +73,7 @@ probabilities.
 function play!(rng::AbstractRNG, lgdy::LogitDynamics{N}, player_ind::Integer,
                actions::Vector{<:Integer}) where N
     oppponent_actions = [actions[player_ind+1:N]..., actions[1:player_ind-1]...]
-    cdf = lgdy.logit_choice_cdfs[player_ind][oppponent_actions..., :]
+    cdf = lgdy.choice_probs[player_ind][oppponent_actions..., :]
     random_value = rand(rng)
     next_action = searchsortedfirst(cdf, random_value*cdf[end])
     return next_action
